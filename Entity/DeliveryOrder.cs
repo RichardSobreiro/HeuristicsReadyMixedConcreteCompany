@@ -5,7 +5,7 @@ namespace Entity
 {
     public class DeliveryOrder
     {
-        public int OrderId { get; set; }
+        public int DeliveryOrderId { get; set; }
         public float TotalRevenue { get; set; }
         public float TotalVolume { get; set; }
         public int RmcType { get; set; }

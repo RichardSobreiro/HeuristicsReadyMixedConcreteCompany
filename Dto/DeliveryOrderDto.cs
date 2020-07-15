@@ -2,9 +2,9 @@
 
 namespace Dto
 {
-    public class OrderDto
+    public class DeliveryOrderDto
     {
-        public int? OrderDtoId { get; set; }
+        public int? DeliveryOrderId { get; set; }
         public float TotalVolume { get; set; }
         public int RMCType { get; set; }
         public DateTime BeginTime { get; set; }
@@ -13,17 +13,12 @@ namespace Dto
         public double Latitude { get; set; }
         public int RegionId { get; set; }
 
-        public class TripDto
+        public class DeliveryDto
         {
             public int TripDtoId { get; set; }
-            public DateTime ArrivalTime { get; set; }
+            public DateTime ServiceTime { get; set; }
             public float Volume { get; set; }
         }
 
-        public class CustomerDto
-        {
-            public int CustomerDtoId { get; set; }
-
-        }
     }
 }

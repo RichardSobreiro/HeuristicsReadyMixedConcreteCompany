@@ -1,6 +1,7 @@
 ﻿using Business.Extensions;
-using Dto;
 using Entity;
+using Repository.Interfaces;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -8,53 +9,62 @@ namespace Business
 {
     public class Optimize
     {
-        public void Execute(OrderDto orderDto)
+        public void Execute(int instanceNumber, DateTime begin, DateTime end, DeliveryOrder newDeliveryOrder)
         {
-            List<LoadingPlace> loadingPlaces = GetLoadingPlaces();
-            List<DeliveryOrder> delieveryOrders = GetOrders();
-
-            List<Delivery> deliveries = new List<Delivery>();
-            foreach(var deliveryOrderLoadingPlace in delieveryOrders)
-            {
-                deliveries.AddRange(deliveryOrderLoadingPlace.Deliveries);
-            }
-            deliveries = deliveries.OrderBy(t => t.ServiceTimeBegin).ToList();
+            List<LoadingPlace> loadingPlaces = GetLoadingPlaces(instanceNumber, begin, end);
+            List<Delivery> deliveries = GetDeliveries(instanceNumber, begin, end, newDeliveryOrder);
 
             int noScheduled = deliveries.Count;
             while(noScheduled > 0)
             {
                 Delivery delivery = deliveries.FirstOrDefault();
 
-                Route bestRouteToAttend = FindBestRouteToAttendDelivery(loadingPlaces);
+                Route bestRouteToAttend = FindBestRouteToAttendDelivery(loadingPlaces, delivery);
 
                 if(bestRouteToAttend == null)
                 {
                     TruckMixer truckMixer = FindBestTruckMixerToAttendDelivery(loadingPlaces);
-                    int elp
-                    Route newRoute = new Route() 
-                    { 
+                    int tripDurationTime = delivery.GetTravelTime(
+                        loadingPlaces.FirstOrDefault(lp => lp.LoadingPlaceId == bestRouteToAttend.InitialLoadingPlaceId));
+                    DateTime endServiceTimeAtCustomer = 
+                        delivery.ServiceTimeBegin.AddMinutes(delivery.CustomerRmcDischargeRate * delivery.Volume);
+                    Route newRoute = new Route()
+                    {
                         TruckMixerId = truckMixer.TruckMixerId,
                         RmcType = delivery.RmcType,
                         TotalVolume = delivery.Volume,
                         InitialLoadingPlaceId = truckMixer.InitialLoadingPlaceId,
                         FinalLoadingPlaceId = truckMixer.InitialLoadingPlaceId,
-                        LoadingEnd = delivery.ServiceTimeBegin.AddMinutes(-1 * delivery.GetTravelTime(
-                            loadingPlaces.FirstOrDefault(lp => lp.LoadingPlaceId == bestRouteToAttend.InitialLoadingPlaceId)))
+                        LoadingEnd = delivery.ServiceTimeBegin.AddMinutes(-1 * tripDurationTime),
+                        LoadingBegin = delivery.ServiceTimeBegin.AddMinutes(-1 * (tripDurationTime + delivery.Volume)),
+                        RouteNodes = new List<RouteNode>() 
+                        { 
+                            new RouteNode() 
+                            {
+                                DeliveryOrderId = delivery.DeliveryOrderId,
+                                DeliveryId = delivery.DeliveryId,
+                                BeginService = delivery.ServiceTimeBegin,
+                                EndService = endServiceTimeAtCustomer
+                            } 
+                        },
+                        ReturnTime = endServiceTimeAtCustomer.AddMinutes(tripDurationTime * 0.8)
                     };
                 }
                 else
                 {
                     bestRouteToAttend.TotalVolume += delivery.Volume;
                     bestRouteToAttend.LoadingEnd.AddMinutes(delivery.Volume);
-                    bestRouteToAttend.RouteNodes.Add(new RouteNodes()
+                    DateTime endServiceTimeAtCustomer =
+                        delivery.ServiceTimeBegin.AddMinutes(delivery.CustomerRmcDischargeRate * delivery.Volume);
+                    bestRouteToAttend.RouteNodes.Add(new RouteNode()
                     {
                         RouteId = bestRouteToAttend.RouteId,
                         BeginService = delivery.ServiceTimeBegin,
-                        EndService = delivery.ServiceTimeBegin.AddMinutes(delivery.Volume * delivery.CustomerRmcDischargeRate)
+                        EndService = endServiceTimeAtCustomer
                     });
                     int travelReturnTime = delivery.GetTravelTime(
                         loadingPlaces.FirstOrDefault(lp => lp.LoadingPlaceId == bestRouteToAttend.InitialLoadingPlaceId));
-                    bestRouteToAttend.ReturnTime.AddMinutes(travelReturnTime);
+                    bestRouteToAttend.ReturnTime = endServiceTimeAtCustomer.AddMinutes(travelReturnTime * 0.8);
                 }
 
                 deliveries.Remove(delivery);
@@ -67,7 +77,7 @@ namespace Business
             return new TruckMixer();
         }
 
-        public Route FindBestRouteToAttendDelivery(List<LoadingPlace> loadingPlaces)
+        public Route FindBestRouteToAttendDelivery(List<LoadingPlace> loadingPlaces, Delivery delivery)
         {
             return new Route();
         }
@@ -77,19 +87,32 @@ namespace Business
             return 0;
         }
 
-        public List<LoadingPlace> GetLoadingPlaces()
+        public List<LoadingPlace> GetLoadingPlaces(int instanceNumber, DateTime begin, DateTime end)
         {
-            return new List<LoadingPlace>();
+            List<LoadingPlace> loadingPlaces = LoadingPlaceRepository.GetLoadingPlaces(instanceNumber, begin, end);
+            return loadingPlaces;
         }
 
-        public List<TruckMixer> GetTruckMixers()
+        public List<Delivery> GetDeliveries(int instanceNumber, DateTime begin, DateTime end, 
+            DeliveryOrder newDeliveryOrder)
         {
-            return new List<TruckMixer>();
+            List<Delivery> oldDeliveries = 
+                DeliveryOrderRepository.GetDeliveriesOrdersWithDeliveryOrderTrips(instanceNumber, begin, end);
+            List<Delivery> newDeliveries = newDeliveryOrder.GetDeliveries();
+            List<Delivery> deliveries = new List<Delivery>();
+            deliveries.AddRange(newDeliveries);
+            deliveries.AddRange(oldDeliveries);
+            return deliveries.OrderBy(d => d.ServiceTimeBegin).ToList();
         }
 
-        public List<DeliveryOrder> GetOrders()
+        public Optimize(ILoadingPlaceRepository _LoadingPlaceRepository, 
+            IDeliveryOrderRepository _DeliveryOrderRepository)
         {
-            return new List<DeliveryOrder>();
+            LoadingPlaceRepository = _LoadingPlaceRepository;
+            DeliveryOrderRepository = _DeliveryOrderRepository;
         }
+
+        ILoadingPlaceRepository LoadingPlaceRepository { get; set; }
+        IDeliveryOrderRepository DeliveryOrderRepository { get; set; }
     }
 }

@@ -15,7 +15,7 @@ namespace Entity
 
         public DateTime LoadingBegin { get; set; }
         public DateTime LoadingEnd { get; set; }
-        public List<RouteNodes> RouteNodes { get; set; }
+        public List<RouteNode> RouteNodes { get; set; }
         public DateTime ReturnTime { get; set; }
     }
 }
