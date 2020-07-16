@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using GeoCoordinatePortable;
+using System.Collections.Generic;
 
 namespace Entity
 {
@@ -9,5 +10,7 @@ namespace Entity
         public double Longitude { get; set; }
         public double Latitude { get; set; }
         public List<TruckMixer> TruckMixers { get; set; }
+
+        public GeoCoordinate GeoCordinates { get { return new GeoCoordinate(Latitude, Longitude); } }
     }
 }

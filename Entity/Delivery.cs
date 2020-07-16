@@ -1,4 +1,5 @@
-﻿using System;
+﻿using GeoCoordinatePortable;
+using System;
 
 namespace Entity
 {
@@ -14,6 +15,7 @@ namespace Entity
         public float CustomerRmcDischargeRate { get; set; } = 2;
         public int RmcType { get; set; }
 
+        public GeoCoordinate GeoCoordinates { get { return new GeoCoordinate(Latitude, Longitude); } }
 
         public int LoadingPlaceId { get; set; }
         public int? RouteId { get; set; }

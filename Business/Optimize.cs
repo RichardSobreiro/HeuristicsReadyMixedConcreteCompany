@@ -79,6 +79,41 @@ namespace Business
 
         public Route FindBestRouteToAttendDelivery(List<LoadingPlace> loadingPlaces, Delivery delivery)
         {
+            double minDistance = double.MaxValue;
+            int loadingPlaceId = 0;
+            foreach(var loadingPlace in loadingPlaces)
+            {
+                foreach(var truckMixer in loadingPlace.TruckMixers)
+                {
+                    foreach(var route in truckMixer.Routes)
+                    {
+                        if(route.TotalVolume + delivery.Volume <= truckMixer.Capacity)
+                        {
+                            foreach(var node in route.RouteNodes)
+                            {
+                                double d = delivery.GeoCoordinates.GetDistanceTo(node.GeoCordinates);
+                                int minutesToTravel = 2 * (int)d;
+                                if (node.EndService.AddMinutes(minutesToTravel) <= delivery.ServiceTimeBegin)
+                                {
+                                    if(delivery.ServiceTimeBegin.Subtract(node.EndService.AddMinutes(minutesToTravel)).TotalMinutes <= 60)
+                                    {
+
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                double distance = delivery.GeoCoordinates.GetDistanceTo(loadingPlace.GeoCordinates);
+                if(distance < minDistance)
+                {
+                    loadingPlaceId = loadingPlace.LoadingPlaceId;
+                    minDistance = distance;
+                }
+            }
+
+
             return new Route();
         }
 
