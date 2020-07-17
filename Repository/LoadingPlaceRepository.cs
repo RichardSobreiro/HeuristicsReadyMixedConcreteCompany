@@ -21,7 +21,7 @@ namespace Repository
             query.Append("lc.\"Latitude\", ");
             query.Append("lc.\"Longitude\", ");
             query.Append("lc.\"ReferenceNumber\", ");
-            query.Append("v.\"VehicleId\", ");
+            query.Append("v.\"VehicleId\" AS \"TruckMixerId\", ");
             query.Append("lc.\"LocationId\" AS \"InitialLoadingPlaceId\", ");
             query.Append("v.\"MaintenanceCostPerKm\", ");
             query.Append("v.\"Volume\", ");
